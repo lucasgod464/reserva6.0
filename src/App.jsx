@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
     import { createClient } from '@supabase/supabase-js'
     import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom'
+    import config from './config'
 
     const supabase = createClient(
       import.meta.env.VITE_SUPABASE_URL,
@@ -29,7 +30,10 @@ import React, { useState, useEffect } from 'react'
       const [notification, setNotification] = useState(null)
       const [pixKey, setPixKey] = useState('')
       const [adultPrice, setAdultPrice] = useState(69.90)
-      const [childPrice, setChildPrice] = useState({ '0-5': 0, '6-10': 0 })
+      const [childPrice, setChildPrice] = useState({ '0-5': 0, '6-10': 45 })
+      const [restaurantAddress, setRestaurantAddress] = useState(config.restaurantAddress)
+      const [reservationTitle, setReservationTitle] = useState('Fazer Reserva')
+      const [locationTitle, setLocationTitle] = useState('Local do Rodízio')
 
       useEffect(() => {
         const fetchPrices = async () => {
@@ -43,7 +47,9 @@ import React, { useState, useEffect } from 'react'
           }
 
           setAdultPrice(data.adult || 69.90)
-          setChildPrice({ '0-5': data['0-5'] || 0, '6-10': data['6-10'] || 0 })
+          setChildPrice({ '0-5': data['0-5'] || 0, '6-10': data['6-10'] || 45 })
+          setLocationTitle(data.locationTitle || 'Local do Rodízio')
+          setReservationTitle(data.reservationTitle || 'Fazer Reserva')
         }
 
         fetchPrices()
@@ -154,7 +160,7 @@ import React, { useState, useEffect } from 'react'
           )}
 
           <div className="form-container">
-            <h2 className="form-title">Fazer Reserva</h2>
+            <h2 className="form-title">{reservationTitle}</h2>
             <form onSubmit={handleSubmit}>
               <div className="input-group">
                 <label>Número de Pessoas:</label>
@@ -225,21 +231,21 @@ import React, { useState, useEffect } from 'react'
               </div>
               <div className="restaurant-info">
                 <p>
-                  <strong>Local do Rodízio</strong><br />
-                  Endereço: Rua Juiz David Barrilli, 376 - Jardim Aquarius, São José dos Campos - SP, 12246-200
+                  <strong>{locationTitle}</strong><br />
+                  Endereço: {restaurantAddress}
                 </p>
                 <div className="button-group">
                   <button
                     type="button"
                     className="button small"
-                    onClick={() => window.open('https://maps.google.com?q=Rua+Juiz+David+Barrilli,+376+-+Jardim+Aquarius,+S%C3%A3o+Jos%C3%A9+dos+Campos+-+SP,+12246-200')}
+                    onClick={() => window.open(`https://maps.google.com?q=${encodeURIComponent(restaurantAddress)}`)}
                   >
                     Abrir no Google Maps
                   </button>
                   <button
                     type="button"
                     className="button small"
-                    onClick={() => copyToClipboard('Rua Juiz David Barrilli, 376 - Jardim Aquarius, São José dos Campos - SP, 12246-200', 'Endereço copiado!')}
+                    onClick={() => copyToClipboard(restaurantAddress, 'Endereço copiado!')}
                   >
                     Copiar Endereço
                   </button>
@@ -304,9 +310,12 @@ import React, { useState, useEffect } from 'react'
 
     const AdminPage = () => {
       const [adultPrice, setAdultPrice] = useState(69.90)
-      const [childPrice, setChildPrice] = useState({ '0-5': 0, '6-10': 0 })
+      const [childPrice, setChildPrice] = useState({ '0-5': 0, '6-10': 45 })
       const [notification, setNotification] = useState(null)
       const [activeSection, setActiveSection] = useState('general')
+      const [restaurantAddress, setRestaurantAddress] = useState(config.restaurantAddress)
+      const [reservationTitle, setReservationTitle] = useState('Fazer Reserva')
+      const [locationTitle, setLocationTitle] = useState('Local do Rodízio')
 
       useEffect(() => {
         const fetchPrices = async () => {
@@ -320,7 +329,9 @@ import React, { useState, useEffect } from 'react'
           }
 
           setAdultPrice(data.adult || 69.90)
-          setChildPrice({ '0-5': data['0-5'] || 0, '6-10': data['6-10'] || 0 })
+          setChildPrice({ '0-5': data['0-5'] || 0, '6-10': data['6-10'] || 45 })
+          setLocationTitle(data.locationTitle || 'Local do Rodízio')
+          setReservationTitle(data.reservationTitle || 'Fazer Reserva')
         }
 
         fetchPrices()
@@ -339,7 +350,9 @@ import React, { useState, useEffect } from 'react'
               id: 1,
               adult: adultPrice,
               '0-5': childPrice['0-5'],
-              '6-10': childPrice['6-10']
+              '6-10': childPrice['6-10'],
+              locationTitle: locationTitle,
+              reservationTitle: reservationTitle
             })
 
           if (error) {
@@ -353,12 +366,42 @@ import React, { useState, useEffect } from 'react'
           if (data) {
             setAdultPrice(data.adult);
             setChildPrice({ '0-5': data['0-5'], '6-10': data['6-10'] });
+            setLocationTitle(data.locationTitle);
+            setReservationTitle(data.reservationTitle);
           }
         } catch (error) {
           showNotification('Erro ao salvar preços', 'error')
           console.error('Erro ao salvar preços:', error)
         }
       }
+
+      const handleSaveAddress = async () => {
+        try {
+          const { data, error } = await supabase
+            .from('prices')
+            .upsert({
+              id: 1,
+              locationTitle: locationTitle,
+              reservationTitle: reservationTitle
+            })
+
+          if (error) {
+            showNotification('Erro ao salvar endereço e título', 'error')
+            console.error('Erro ao salvar endereço e título:', error)
+            return
+          }
+
+          showNotification('Endereço e Título salvos com sucesso!', 'success')
+          console.log('Endereço e Título salvos com sucesso!')
+          if (data) {
+            setLocationTitle(data.locationTitle);
+            setReservationTitle(data.reservationTitle);
+          }
+        } catch (error) {
+          showNotification('Erro ao salvar endereço e título', 'error')
+          console.error('Erro ao salvar endereço e título:', error)
+        }
+      };
 
       return (
         <div className="admin-container">
@@ -368,6 +411,9 @@ import React, { useState, useEffect } from 'react'
               <li><Link to="/">Voltar para Reserva</Link></li>
               <li onClick={() => setActiveSection('prices')}>
                 <a href="#">Configurações de Preço</a>
+              </li>
+              <li onClick={() => setActiveSection('address')}>
+                <a href="#">Configurações de Endereço e Título</a>
               </li>
               <li><a href="#" onClick={() => setActiveSection('general')}>Geral</a></li>
               <li><a href="#" onClick={() => setActiveSection('users')}>Usuários</a></li>
@@ -404,6 +450,36 @@ import React, { useState, useEffect } from 'react'
                   />
                 </div>
                 <button className="button primary" onClick={handleSavePrices}>Salvar Preços</button>
+              </div>
+            )}
+            {activeSection === 'address' && (
+              <div className="address-settings">
+                <h2>Configurações de Endereço e Título</h2>
+                <div className="input-group">
+                  <label>Endereço do Rodízio:</label>
+                  <input
+                    type="text"
+                    value={restaurantAddress}
+                    onChange={(e) => setRestaurantAddress(e.target.value)}
+                  />
+                </div>
+                <div className="input-group">
+                  <label>Título do Local do Rodízio:</label>
+                  <input
+                    type="text"
+                    value={locationTitle}
+                    onChange={(e) => setLocationTitle(e.target.value)}
+                  />
+                </div>
+                 <div className="input-group">
+                  <label>Título do Painel de Reserva:</label>
+                  <input
+                    type="text"
+                    value={reservationTitle}
+                    onChange={(e) => setReservationTitle(e.target.value)}
+                  />
+                </div>
+                <button className="button primary" onClick={handleSaveAddress}>Salvar Endereço e Título</button>
               </div>
             )}
             {activeSection === 'general' && (
