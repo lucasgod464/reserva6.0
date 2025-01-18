@@ -29,7 +29,7 @@ import React, { useState, useEffect } from 'react'
       const [notification, setNotification] = useState(null)
       const [pixKey, setPixKey] = useState('')
       const [adultPrice, setAdultPrice] = useState(69.90)
-      const [childPrice, setChildPrice] = useState({ '0-5': 30, '6-10': 45 })
+      const [childPrice, setChildPrice] = useState({ '0-5': 0, '6-10': 0 })
 
       useEffect(() => {
         const fetchPrices = async () => {
@@ -43,7 +43,7 @@ import React, { useState, useEffect } from 'react'
           }
 
           setAdultPrice(data.adult || 69.90)
-          setChildPrice({ '0-5': data['0-5'] || 30, '6-10': data['6-10'] || 45 })
+          setChildPrice({ '0-5': data['0-5'] || 0, '6-10': data['6-10'] || 0 })
         }
 
         fetchPrices()
@@ -134,6 +134,10 @@ import React, { useState, useEffect } from 'react'
         return total.toFixed(2)
       }
 
+      const isPriceZero = (price) => {
+        return Math.abs(price) < 0.0001;
+      }
+
       return (
         <div className="container">
           {showWelcome && (
@@ -186,7 +190,7 @@ import React, { useState, useEffect } from 'react'
                           checked={participant.child === '0-5'}
                           onChange={(e) => handleParticipantChange(index, 'child', e.target.value)}
                         />
-                        Criança (até 5 anos)
+                        Criança (até 5 anos) - R$ {isPriceZero(childPrice['0-5']) ? '0.00' : childPrice['0-5']?.toFixed(2)}
                       </label>
                       <label>
                         <input
@@ -196,7 +200,7 @@ import React, { useState, useEffect } from 'react'
                           checked={participant.child === '6-10'}
                           onChange={(e) => handleParticipantChange(index, 'child', e.target.value)}
                         />
-                        Criança (6-10 anos)
+                        Criança (6-10 anos) - R$ {isPriceZero(childPrice['6-10']) ? '0.00' : childPrice['6-10']?.toFixed(2)}
                       </label>
                     </div>
                   )}
@@ -300,7 +304,7 @@ import React, { useState, useEffect } from 'react'
 
     const AdminPage = () => {
       const [adultPrice, setAdultPrice] = useState(69.90)
-      const [childPrice, setChildPrice] = useState({ '0-5': 30, '6-10': 45 })
+      const [childPrice, setChildPrice] = useState({ '0-5': 0, '6-10': 0 })
       const [notification, setNotification] = useState(null)
       const [activeSection, setActiveSection] = useState('general')
 
@@ -316,7 +320,7 @@ import React, { useState, useEffect } from 'react'
           }
 
           setAdultPrice(data.adult || 69.90)
-          setChildPrice({ '0-5': data['0-5'] || 30, '6-10': data['6-10'] || 45 })
+          setChildPrice({ '0-5': data['0-5'] || 0, '6-10': data['6-10'] || 0 })
         }
 
         fetchPrices()
@@ -328,21 +332,32 @@ import React, { useState, useEffect } from 'react'
       }
 
       const handleSavePrices = async () => {
-        const { error } = await supabase
-          .from('prices')
-          .upsert({
-            id: 1,
-            adult: adultPrice,
-            '0-5': childPrice['0-5'],
-            '6-10': childPrice['6-10']
-          })
+        try {
+          const { data, error } = await supabase
+            .from('prices')
+            .upsert({
+              id: 1,
+              adult: adultPrice,
+              '0-5': childPrice['0-5'],
+              '6-10': childPrice['6-10']
+            })
 
-        if (error) {
+          if (error) {
+            showNotification('Erro ao salvar preços', 'error')
+            console.error('Erro ao salvar preços:', error)
+            return
+          }
+
+          showNotification('Preços salvos com sucesso!', 'success')
+          console.log('Preços salvos com sucesso!')
+          if (data) {
+            setAdultPrice(data.adult);
+            setChildPrice({ '0-5': data['0-5'], '6-10': data['6-10'] });
+          }
+        } catch (error) {
           showNotification('Erro ao salvar preços', 'error')
-          return
+          console.error('Erro ao salvar preços:', error)
         }
-
-        showNotification('Preços salvos com sucesso!', 'success')
       }
 
       return (
