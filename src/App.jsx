@@ -40,6 +40,7 @@ const ReservationPage = () => {
   const [total, setTotal] = useState(0);
   const [paymentPixKey, setPaymentPixKey] = useState('');
   const [paymentPixType, setPaymentPixType] = useState('CPF');
+  const [comprovante, setComprovante] = useState(null);
 
   useEffect(() => {
     const fetchPrices = async () => {
@@ -161,21 +162,10 @@ const ReservationPage = () => {
   }
 
   const handleReceiptUpload = async (e) => {
-    const file = e.target.files[0]
-    if (!file) return
-
-    const { data, error } = await supabase.storage
-      .from('receipts')
-      .upload(`receipts/${Date.now()}_${file.name}`, file)
-
-    if (error) {
-      showNotification('Erro ao enviar comprovante', 'error')
-      return
-    }
-
-    setReceipt(data.path)
-    showNotification('Comprovante enviado com sucesso!', 'success')
-  }
+    const file = e.target.files[0];
+    if (!file) return;
+    setComprovante(file);
+  };
 
   const copyToClipboard = (text, message) => {
     navigator.clipboard.writeText(text)
@@ -185,6 +175,35 @@ const ReservationPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault()
     
+    let comprovanteNome = null;
+    let receiptPath = null;
+
+    if (comprovante) {
+      const extensao = comprovante.name.split('.').pop();
+      comprovanteNome = `comprovante_${Date.now()}.${extensao}`;
+
+      try {
+        const { data, error: uploadError } = await supabase
+          .storage
+          .from('receipts')
+          .upload(comprovanteNome, comprovante, {
+            cacheControl: '3600',
+            upsert: true
+          });
+
+        if (uploadError) {
+          showNotification('Erro ao enviar comprovante', 'error');
+          console.error('Erro ao enviar comprovante:', uploadError);
+          return;
+        }
+        receiptPath = data.path;
+      } catch (uploadError) {
+        showNotification('Erro ao enviar comprovante', 'error');
+        console.error('Erro ao enviar comprovante:', uploadError);
+        return;
+      }
+    }
+    
     const { error } = await supabase
       .from('reservations')
       .insert([{
@@ -193,7 +212,7 @@ const ReservationPage = () => {
         phone,
         coupon,
         discount,
-        receipt
+        receipt: receiptPath
       }])
 
     if (error) {
