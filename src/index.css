@@ -1,0 +1,322 @@
+:root {
+      --beige: #FFF8DC;
+      --brown: #8B4513;
+      --light-brown: #A0522D;
+      --success: #28a745;
+      --error: #dc3545;
+      --white: #ffffff;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      --gray: #e2e8f0;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--beige);
+      color: var(--brown);
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+    }
+
+    .welcome-popup {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--white);
+      padding: 2.5rem;
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      z-index: 1000;
+      text-align: center;
+      width: 90%;
+      max-width: 400px;
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translate(-50%, -45%); }
+      to { opacity: 1; transform: translate(-50%, -50%); }
+    }
+
+    .form-container {
+      background: var(--white);
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      padding: 2rem;
+    }
+
+    .form-title {
+      color: var(--brown);
+      font-size: 2rem;
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+
+    .input-group {
+      margin-bottom: 1.25rem;
+      position: relative;
+    }
+
+    .input-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+      color: var(--brown);
+    }
+
+    input[type="text"],
+    input[type="number"],
+    input[type="tel"],
+    input[type="file"] {
+      width: 100%;
+      padding: 0.75rem;
+      border: 2px solid var(--gray);
+      border-radius: 8px;
+      font-size: 1rem;
+      transition: all 0.2s ease;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: var(--light-brown);
+      box-shadow: 0 0 0 3px rgba(139, 69, 19, 0.1);
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: 8px;
+      background-color: var(--brown);
+      color: var(--white);
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      gap: 0.5rem;
+    }
+
+    .button:hover {
+      background-color: var(--light-brown);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow);
+    }
+
+    .button:active {
+      transform: translateY(0);
+    }
+
+    .button.small {
+      padding: 0.5rem 1rem;
+      font-size: 0.875rem;
+    }
+
+    .button.primary {
+      width: 100%;
+      padding: 1rem;
+      font-size: 1.1rem;
+      margin-top: 1rem;
+    }
+
+    .restaurant-info {
+      background: #f8f8f8;
+      padding: 1.25rem;
+      border-radius: 8px;
+      margin-top: 1rem;
+    }
+
+    .restaurant-info p {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 500;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+
+    .payment-info {
+      background: #f8f8f8;
+      padding: 1.25rem;
+      border-radius: 8px;
+      margin-top: 1rem;
+    }
+
+    .payment-steps {
+      margin-top: 1rem;
+    }
+
+    .payment-step {
+      margin-bottom: 1.5rem;
+      padding: 1rem;
+      border: 1px dashed #ccc;
+      border-radius: 8px;
+      position: relative;
+    }
+
+    .step-number {
+      position: absolute;
+      top: -0.75rem;
+      left: -0.75rem;
+      background-color: var(--brown);
+      color: var(--white);
+      width: 2rem;
+      height: 2rem;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+    }
+
+    .pix-key-section {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-top: 0.5rem;
+    }
+
+    .copy-pix-checkbox {
+      margin-top: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .file-formats {
+      font-size: 0.875rem;
+      color: #777;
+      margin-top: 0.25rem;
+    }
+
+    .coupon-section {
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+
+    .coupon-button {
+      background: none;
+      border: none;
+      color: var(--brown);
+      cursor: pointer;
+      font-size: 1rem;
+      text-decoration: underline;
+    }
+
+    .notification {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      padding: 1rem 1.5rem;
+      border-radius: 8px;
+      color: var(--white);
+      animation: slideIn 0.3s ease-out;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .notification.success {
+      background-color: var(--success);
+    }
+
+    .notification.error {
+      background-color: var(--error);
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    .participant-group {
+      margin-bottom: 1.5rem;
+      padding: 1rem;
+      border: 1px solid var(--gray);
+      border-radius: 8px;
+    }
+
+    .child-options {
+      display: flex;
+      gap: 1rem;
+      margin-top: 0.5rem;
+    }
+
+    .child-options label {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .admin-container {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    .admin-sidebar {
+      width: 250px;
+      background-color: #f8f8f8;
+      padding: 2rem;
+      border-right: 1px solid #e2e8f0;
+    }
+
+    .admin-sidebar h2 {
+      margin-bottom: 1.5rem;
+    }
+
+    .admin-sidebar ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .admin-sidebar li {
+      margin-bottom: 1rem;
+    }
+
+    .admin-sidebar a {
+      text-decoration: none;
+      color: var(--brown);
+      display: block;
+      padding: 0.5rem;
+      border-radius: 4px;
+      transition: background-color 0.2s ease;
+    }
+
+    .admin-sidebar a:hover {
+      background-color: #e2e8f0;
+    }
+
+    .admin-content {
+      flex: 1;
+      padding: 2rem;
+    }
+
+    .admin-link {
+      display: inline-block;
+      margin-top: 1rem;
+      color: var(--brown);
+      text-decoration: underline;
+    }
+
+    .price-settings {
+      background: #f8f8f8;
+      padding: 1.25rem;
+      border-radius: 8px;
+      margin-top: 1rem;
+    }
