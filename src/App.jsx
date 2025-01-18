@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom'
 import config from './config'
+import WelcomePopup from './components/WelcomePopup'
 
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
@@ -20,7 +21,6 @@ const App = () => {
 }
 
 const ReservationPage = () => {
-  const [showWelcome, setShowWelcome] = useState(true)
   const [adults, setAdults] = useState(1)
   const [participants, setParticipants] = useState([{ name: '', child: null }])
   const [phone, setPhone] = useState('')
@@ -31,9 +31,13 @@ const ReservationPage = () => {
   const [pixKey, setPixKey] = useState('')
   const [adultPrice, setAdultPrice] = useState(69.90)
   const [childPrice, setChildPrice] = useState({ '0-5': 0, '6-10': 45 })
-  const [restaurantAddress, setRestaurantAddress] = useState('') // Initialize as empty string
+  const [restaurantAddress, setRestaurantAddress] = useState('')
   const [reservationTitle, setReservationTitle] = useState('Fazer Reserva')
   const [locationTitle, setLocationTitle] = useState('Local do Rodízio')
+  const [popupTitle, setPopupTitle] = useState('Bem-vindo ao nosso restaurante!')
+  const [popupDescription, setPopupDescription] = useState('Faça sua reserva agora mesmo.')
+  const [showPopup, setShowPopup] = useState(true)
+  const [total, setTotal] = useState(0);
 
   useEffect(() => {
     const fetchPrices = async () => {
@@ -72,9 +76,34 @@ const ReservationPage = () => {
       }
     };
 
+    const fetchPopupSettings = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('popup_settings')
+          .select('*')
+          .single();
+
+        if (error) {
+          console.error("Erro ao buscar configurações do popup:", error);
+          return;
+        }
+
+        setPopupTitle(data?.title || 'Bem-vindo ao nosso restaurante!');
+        setPopupDescription(data?.description || 'Faça sua reserva agora mesmo.');
+        setShowPopup(data?.show === undefined ? true : data.show);
+      } catch (error) {
+        console.error("Erro ao buscar configurações do popup:", error);
+      }
+    };
+
     fetchPrices();
     fetchAddress();
+    fetchPopupSettings();
   }, []);
+
+  useEffect(() => {
+    calculateTotal();
+  }, [adults, participants, adultPrice, childPrice]);
 
   const showNotification = (message, type) => {
     setNotification({ message, type })
@@ -85,10 +114,12 @@ const ReservationPage = () => {
     const newParticipants = [...participants]
     newParticipants[index][field] = value
     setParticipants(newParticipants)
+    calculateTotal();
   }
 
   const addParticipant = () => {
     setParticipants([...participants, { name: '', child: null }])
+    calculateTotal();
   }
 
   const handleCoupon = async () => {
@@ -152,33 +183,50 @@ const ReservationPage = () => {
   }
 
   const calculateTotal = () => {
-    let total = adults * adultPrice
-    participants.forEach(participant => {
-      if (participant.child) {
-        total += childPrice[participant.child] || 0
-      }
-    })
-    return total.toFixed(2)
-  }
+    let totalValue = 0;
+    
+    // Calculate the total for adults
+    totalValue += adults * adultPrice;
 
-  const isPriceZero = (price) => {
-    return Math.abs(price) < 0.0001;
-  }
+    // Calculate the total for children
+    participants.forEach(participant => {
+      if (participant.child === '0-5') {
+        totalValue -= adultPrice;
+        totalValue += childPrice['0-5'] || 0;
+      } else if (participant.child === '6-10') {
+        totalValue -= adultPrice;
+        totalValue += childPrice['6-10'] || 0;
+      }
+    });
+
+    setTotal(totalValue.toFixed(2));
+  };
+
+  const handleChildCheckboxChange = (index, value) => {
+    setParticipants(prevParticipants => {
+      const newParticipants = [...prevParticipants];
+      
+      // If a checkbox is checked, uncheck the other one
+      if (value === '0-5') {
+        newParticipants[index] = { ...newParticipants[index], child: newParticipants[index].child === '0-5' ? null : '0-5' };
+      } else if (value === '6-10') {
+        newParticipants[index] = { ...newParticipants[index], child: newParticipants[index].child === '6-10' ? null : '6-10' };
+      } else {
+        newParticipants[index] = { ...newParticipants[index], child: null };
+      }
+      
+      return newParticipants;
+    });
+  };
 
   return (
     <div className="container">
-      {showWelcome && (
-        <div className="welcome-popup">
-          <h2>Bem-vindo ao nosso restaurante!</h2>
-          <p>Faça sua reserva agora mesmo.</p>
-          <button 
-            className="button"
-            onClick={() => setShowWelcome(false)}
-          >
-            Fechar
-          </button>
-        </div>
-      )}
+      <WelcomePopup
+        title={popupTitle}
+        description={popupDescription}
+        show={showPopup}
+        onClose={() => setShowPopup(false)}
+      />
 
       <div className="form-container">
         <h2 className="form-title">{reservationTitle}</h2>
@@ -211,23 +259,23 @@ const ReservationPage = () => {
                 <div className="child-options">
                   <label>
                     <input
-                      type="radio"
-                      name={`child-${index}`}
+                      type="checkbox"
+                      name={`child-${index}-0-5`}
                       value="0-5"
                       checked={participant.child === '0-5'}
-                      onChange={(e) => handleParticipantChange(index, 'child', e.target.value)}
+                      onChange={(e) => handleChildCheckboxChange(index, '0-5')}
                     />
-                    Criança (até 5 anos) - R$ {isPriceZero(childPrice['0-5']) ? '0.00' : childPrice['0-5']?.toFixed(2)}
+                    Criança (até 5 anos) - R$ {childPrice['0-5']?.toFixed(2)}
                   </label>
                   <label>
                     <input
-                      type="radio"
-                      name={`child-${index}`}
+                      type="checkbox"
+                      name={`child-${index}-6-10`}
                       value="6-10"
                       checked={participant.child === '6-10'}
-                      onChange={(e) => handleParticipantChange(index, 'child', e.target.value)}
+                      onChange={(e) => handleChildCheckboxChange(index, '6-10')}
                     />
-                    Criança (6-10 anos) - R$ {isPriceZero(childPrice['6-10']) ? '0.00' : childPrice['6-10']?.toFixed(2)}
+                    Criança (6-10 anos) - R$ {childPrice['6-10']?.toFixed(2)}
                   </label>
                 </div>
               )}
@@ -274,7 +322,7 @@ const ReservationPage = () => {
           </div>
           <div className="payment-info">
             <h2>Informações de Pagamento</h2>
-            <p><strong>Valor Total: R$ {calculateTotal()}</strong></p>
+            <p><strong>Valor Total: R$ {total}</strong></p>
             <p>Para finalizar sua reserva, siga os passos abaixo:</p>
             <div className="payment-steps">
               <div className="payment-step">
@@ -334,9 +382,12 @@ const AdminPage = () => {
   const [childPrice, setChildPrice] = useState({ '0-5': 0, '6-10': 45 })
   const [notification, setNotification] = useState(null)
   const [activeSection, setActiveSection] = useState('general')
-  const [restaurantAddress, setRestaurantAddress] = useState('') // Initialize as empty string
+  const [restaurantAddress, setRestaurantAddress] = useState('')
   const [reservationTitle, setReservationTitle] = useState('Fazer Reserva')
   const [locationTitle, setLocationTitle] = useState('Local do Rodízio')
+  const [popupTitle, setPopupTitle] = useState('Bem-vindo ao nosso restaurante!')
+  const [popupDescription, setPopupDescription] = useState('Faça sua reserva agora mesmo.')
+  const [showPopup, setShowPopup] = useState(true)
 
   useEffect(() => {
     const fetchPrices = async () => {
@@ -375,8 +426,29 @@ const AdminPage = () => {
       }
     };
 
+    const fetchPopupSettings = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('popup_settings')
+          .select('*')
+          .single();
+
+        if (error) {
+          console.error("Erro ao buscar configurações do popup:", error);
+          return;
+        }
+
+        setPopupTitle(data?.title || 'Bem-vindo ao nosso restaurante!');
+        setPopupDescription(data?.description || 'Faça sua reserva agora mesmo.');
+        setShowPopup(data?.show === undefined ? true : data.show);
+      } catch (error) {
+        console.error("Erro ao buscar configurações do popup:", error);
+      }
+    };
+
     fetchPrices();
     fetchAddress();
+    fetchPopupSettings();
   }, []);
 
   const showNotification = (message, type) => {
@@ -437,6 +509,31 @@ const AdminPage = () => {
     }
   };
 
+  const handleSavePopupSettings = async () => {
+    try {
+      const { error } = await supabase
+        .from('popup_settings')
+        .upsert({
+          id: 1,
+          title: popupTitle,
+          description: popupDescription,
+          show: showPopup,
+        });
+
+      if (error) {
+        showNotification('Erro ao salvar configurações do popup', 'error');
+        console.error('Erro ao salvar configurações do popup:', error);
+        return;
+      }
+
+      showNotification('Configurações do popup salvas com sucesso!', 'success');
+      console.log('Configurações do popup salvas com sucesso!');
+    } catch (error) {
+      showNotification('Erro ao salvar configurações do popup', 'error');
+      console.error('Erro ao salvar configurações do popup:', error);
+    }
+  };
+
   return (
     <div className="admin-container">
       <div className="admin-sidebar">
@@ -448,6 +545,9 @@ const AdminPage = () => {
           </li>
           <li onClick={() => setActiveSection('address')}>
             <a href="#">Configurações de Endereço e Título</a>
+          </li>
+          <li onClick={() => setActiveSection('popup')}>
+            <a href="#">Configurações do Popup</a>
           </li>
           <li><a href="#" onClick={() => setActiveSection('general')}>Geral</a></li>
           <li><a href="#" onClick={() => setActiveSection('users')}>Usuários</a></li>
@@ -500,6 +600,37 @@ const AdminPage = () => {
             <button className="button primary" onClick={handleSaveAddress}>Salvar Endereço e Título</button>
           </div>
         )}
+        {activeSection === 'popup' && (
+          <div className="popup-settings">
+            <h2>Configurações do Popup</h2>
+            <div className="input-group">
+              <label>Título do Popup:</label>
+              <input
+                type="text"
+                value={popupTitle}
+                onChange={(e) => setPopupTitle(e.target.value)}
+              />
+            </div>
+            <div className="input-group">
+              <label>Descrição do Popup:</label>
+              <textarea
+                value={popupDescription}
+                onChange={(e) => setPopupDescription(e.target.value)}
+              />
+            </div>
+            <div className="input-group">
+              <label>
+                <input
+                  type="checkbox"
+                  checked={showPopup}
+                  onChange={(e) => setShowPopup(e.target.checked)}
+                />
+                Mostrar Popup
+              </label>
+            </div>
+            <button className="button primary" onClick={handleSavePopupSettings}>Salvar Configurações do Popup</button>
+          </div>
+        )}
         {activeSection === 'general' && (
           <p>Configurações gerais do sistema.</p>
         )}
@@ -518,5 +649,22 @@ const AdminPage = () => {
     </div>
   )
 }
+
+const handleChildCheckboxChange = (index, value) => {
+  setParticipants(prevParticipants => {
+    const newParticipants = [...prevParticipants];
+    
+    // If a checkbox is checked, uncheck the other one
+    if (value === '0-5') {
+      newParticipants[index] = { ...newParticipants[index], child: newParticipants[index].child === '0-5' ? null : '0-5' };
+    } else if (value === '6-10') {
+      newParticipants[index] = { ...newParticipants[index], child: newParticipants[index].child === '6-10' ? null : '6-10' };
+    } else {
+      newParticipants[index] = { ...newParticipants[index], child: null };
+    }
+    
+    return newParticipants;
+  });
+};
 
 export default App
