@@ -38,6 +38,8 @@ const ReservationPage = () => {
   const [popupDescription, setPopupDescription] = useState('Faça sua reserva agora mesmo.')
   const [showPopup, setShowPopup] = useState(true)
   const [total, setTotal] = useState(0);
+  const [paymentPixKey, setPaymentPixKey] = useState('');
+  const [paymentPixType, setPaymentPixType] = useState('CPF');
 
   useEffect(() => {
     const fetchPrices = async () => {
@@ -96,9 +98,29 @@ const ReservationPage = () => {
       }
     };
 
+    const fetchPaymentSettings = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('payment_settings')
+          .select('*')
+          .single();
+
+        if (error) {
+          console.error("Erro ao buscar configurações de pagamento:", error);
+          return;
+        }
+
+        setPaymentPixKey(data?.pix_key || '');
+        setPaymentPixType(data?.pix_type || 'CPF');
+      } catch (error) {
+        console.error("Erro ao buscar configurações de pagamento:", error);
+      }
+    };
+
     fetchPrices();
     fetchAddress();
     fetchPopupSettings();
+    fetchPaymentSettings();
   }, []);
 
   useEffect(() => {
@@ -329,17 +351,17 @@ const ReservationPage = () => {
                 <span className="step-number">1</span>
                 <p><strong>Realize o Pagamento via PIX</strong></p>
                 <div className="pix-key-section">
-                  <label>Tipo de Chave: CPF</label>
+                  <label>Tipo de Chave: {paymentPixType}</label>
                   <input
                     type="text"
-                    value={pixKey}
-                    onChange={(e) => setPixKey(e.target.value)}
+                    value={paymentPixKey}
+                    onChange={(e) => setPaymentPixKey(e.target.value)}
                     placeholder="Insira a chave PIX"
                   />
                   <button
                     type="button"
                     className="button small"
-                    onClick={() => copyToClipboard(pixKey, 'Chave PIX copiada!')}
+                    onClick={() => copyToClipboard(paymentPixKey, 'Chave PIX copiada!')}
                   >
                     Copiar
                   </button>
@@ -388,6 +410,8 @@ const AdminPage = () => {
   const [popupTitle, setPopupTitle] = useState('Bem-vindo ao nosso restaurante!')
   const [popupDescription, setPopupDescription] = useState('Faça sua reserva agora mesmo.')
   const [showPopup, setShowPopup] = useState(true)
+  const [paymentPixKey, setPaymentPixKey] = useState('');
+  const [paymentPixType, setPaymentPixType] = useState('CPF');
 
   useEffect(() => {
     const fetchPrices = async () => {
@@ -446,9 +470,29 @@ const AdminPage = () => {
       }
     };
 
+    const fetchPaymentSettings = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('payment_settings')
+          .select('*')
+          .single();
+
+        if (error) {
+          console.error("Erro ao buscar configurações de pagamento:", error);
+          return;
+        }
+
+        setPaymentPixKey(data?.pix_key || '');
+        setPaymentPixType(data?.pix_type || 'CPF');
+      } catch (error) {
+        console.error("Erro ao buscar configurações de pagamento:", error);
+      }
+    };
+
     fetchPrices();
     fetchAddress();
     fetchPopupSettings();
+    fetchPaymentSettings();
   }, []);
 
   const showNotification = (message, type) => {
@@ -534,6 +578,30 @@ const AdminPage = () => {
     }
   };
 
+  const handleSavePaymentSettings = async () => {
+    try {
+      const { error } = await supabase
+        .from('payment_settings')
+        .upsert({
+          id: 1,
+          pix_key: paymentPixKey,
+          pix_type: paymentPixType,
+        });
+
+      if (error) {
+        showNotification('Erro ao salvar configurações de pagamento', 'error');
+        console.error('Erro ao salvar configurações de pagamento:', error);
+        return;
+      }
+
+      showNotification('Configurações de pagamento salvas com sucesso!', 'success');
+      console.log('Configurações de pagamento salvas com sucesso!');
+    } catch (error) {
+      showNotification('Erro ao salvar configurações de pagamento', 'error');
+      console.error('Erro ao salvar configurações de pagamento:', error);
+    }
+  };
+
   return (
     <div className="admin-container">
       <div className="admin-sidebar">
@@ -548,6 +616,9 @@ const AdminPage = () => {
           </li>
           <li onClick={() => setActiveSection('popup')}>
             <a href="#">Configurações do Popup</a>
+          </li>
+          <li onClick={() => setActiveSection('payment')}>
+            <a href="#">Configurações de Pagamento</a>
           </li>
           <li><a href="#" onClick={() => setActiveSection('general')}>Geral</a></li>
           <li><a href="#" onClick={() => setActiveSection('users')}>Usuários</a></li>
@@ -629,6 +700,33 @@ const AdminPage = () => {
               </label>
             </div>
             <button className="button primary" onClick={handleSavePopupSettings}>Salvar Configurações do Popup</button>
+          </div>
+        )}
+        {activeSection === 'payment' && (
+          <div className="payment-settings">
+            <h2>Configurações de Pagamento</h2>
+            <div className="input-group">
+              <label>Chave PIX:</label>
+              <input
+                type="text"
+                value={paymentPixKey}
+                onChange={(e) => setPaymentPixKey(e.target.value)}
+              />
+            </div>
+            <div className="input-group">
+              <label>Tipo de Chave PIX:</label>
+              <select
+                value={paymentPixType}
+                onChange={(e) => setPaymentPixType(e.target.value)}
+              >
+                <option value="CPF">CPF</option>
+                <option value="CNPJ">CNPJ</option>
+                <option value="Email">Email</option>
+                <option value="Telefone">Telefone</option>
+                <option value="Aleatória">Aleatória</option>
+              </select>
+            </div>
+            <button className="button primary" onClick={handleSavePaymentSettings}>Salvar Chave PIX</button>
           </div>
         )}
         {activeSection === 'general' && (
