@@ -45,9 +45,9 @@
     }
 
     .form-container {
-      background: var(--white);
+      background: #f5f5dc;
       border-radius: 12px;
-      box-shadow: var(--shadow);
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
       padding: 2rem;
     }
 
@@ -60,12 +60,14 @@
 
     .input-group {
       margin-bottom: 1.25rem;
-      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
     }
 
     .input-group label {
-      display: block;
-      margin-bottom: 0.5rem;
+      flex-shrink: 0;
+      min-width: 150px;
       font-weight: 500;
       color: var(--brown);
     }
@@ -74,12 +76,13 @@
     input[type="number"],
     input[type="tel"],
     input[type="file"] {
-      width: 100%;
+      flex: 1;
       padding: 0.75rem;
-      border: 2px solid var(--gray);
+      border: 2px solid var(--brown);
       border-radius: 8px;
       font-size: 1rem;
       transition: all 0.2s ease;
+      background-color: #fff8dc;
     }
 
     input:focus {
@@ -200,17 +203,19 @@
     }
 
     .coupon-section {
-      text-align: center;
       margin-bottom: 1rem;
     }
 
     .coupon-button {
-      background: none;
-      border: none;
+      background-color: #fff8dc;
+      border: 2px solid var(--brown);
       color: var(--brown);
       cursor: pointer;
       font-size: 1rem;
-      text-decoration: underline;
+      text-decoration: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      display: inline-block;
     }
 
     .notification {
@@ -248,7 +253,7 @@
     .participant-group {
       margin-bottom: 1.5rem;
       padding: 1rem;
-      border: 1px solid var(--gray);
+      border: 1px solid var(--brown);
       border-radius: 8px;
     }
 
@@ -320,4 +325,21 @@
       padding: 1.25rem;
       border-radius: 8px;
       margin-top: 1rem;
+    }
+
+    .coupon-input-group {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+
+    .coupon-input-group input[type="text"] {
+      flex: 1;
+      background-color: #fff8dc;
+    }
+    .coupon-section {
+      display: flex;
+      justify-content: space-between; /* Distribui espaço entre os elementos */
+      align-items: center;             /* Alinha verticalmente */
+      margin-bottom: 1rem;
     }
