@@ -129,11 +129,15 @@
       margin-top: 1rem;
     }
 
-    .restaurant-info {
+    .restaurant-info,
+    .payment-step,
+    .payment-info {
       background: #f8f8f8;
       padding: 1.25rem;
       border-radius: 8px;
       margin-top: 1rem;
+      border: 2px solid var(--brown);
+      background-color: #fff8dc;
     }
 
     .restaurant-info p {
@@ -149,9 +153,6 @@
     }
 
     .payment-info {
-      background: #f8f8f8;
-      padding: 1.25rem;
-      border-radius: 8px;
       margin-top: 1rem;
     }
 
@@ -189,6 +190,16 @@
       margin-top: 0.5rem;
     }
 
+    .pix-key-text {
+      flex: 1;
+      padding: 0.75rem;
+      border: 2px solid var(--brown);
+      border-radius: 8px;
+      font-size: 1rem;
+      background-color: #fff8dc;
+      text-align: center;
+    }
+
     .copy-pix-checkbox {
       margin-top: 0.5rem;
       display: flex;
@@ -204,6 +215,8 @@
 
     .coupon-section {
       margin-bottom: 1rem;
+      display: flex;
+      justify-content: center;
     }
 
     .coupon-button {
@@ -255,6 +268,16 @@
       padding: 1rem;
       border: 1px solid var(--brown);
       border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .participant-group > div {
+      width: 100%;
+    }
+
+    .participant-group input[type="text"] {
+      width: calc(100% - 20px);
     }
 
     .child-options {
@@ -336,10 +359,4 @@
     .coupon-input-group input[type="text"] {
       flex: 1;
       background-color: #fff8dc;
-    }
-    .coupon-section {
-      display: flex;
-      justify-content: space-between; /* Distribui espaço entre os elementos */
-      align-items: center;             /* Alinha verticalmente */
-      margin-bottom: 1rem;
     }

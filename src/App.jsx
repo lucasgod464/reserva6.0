@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
     import { createClient } from '@supabase/supabase-js'
-    import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom'
+    import { BrowserRouter as Router, Route, Routes, Link, useNavigate } from 'react-router-dom'
     import config from './config'
     import WelcomePopup from './components/WelcomePopup'
 
@@ -274,6 +274,14 @@ import React, { useState, useEffect } from 'react'
             <h2 className="form-title">{reservationTitle}</h2>
             <form onSubmit={handleSubmit}>
               <div className="input-group">
+                <label>Telefone responsável:</label>
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                />
+              </div>
+              <div className="input-group">
                 <label>Número de Pessoas:</label>
                 <input
                   type="number"
@@ -294,7 +302,7 @@ import React, { useState, useEffect } from 'react'
                       type="text"
                       value={participant.name}
                       onChange={(e) => handleParticipantChange(index, 'name', e.target.value)}
-                      placeholder={`Nome do Participante ${index + 1}`}
+                      placeholder={`Nome Completo do Participante ${index + 1}`}
                     />
                   </div>
                   {index > 0 && (
@@ -323,14 +331,6 @@ import React, { useState, useEffect } from 'react'
                   )}
                 </div>
               ))}
-              <div className="input-group">
-                <label>Telefone:</label>
-                <input
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                />
-              </div>
               <div className="coupon-section">
                 {!showCouponInput ? (
                   <button
@@ -390,12 +390,7 @@ import React, { useState, useEffect } from 'react'
                     <p><strong>Realize o Pagamento via PIX</strong></p>
                     <div className="pix-key-section">
                       <label>Tipo de Chave: {paymentPixType}</label>
-                      <input
-                        type="text"
-                        value={paymentPixKey}
-                        onChange={(e) => setPaymentPixKey(e.target.value)}
-                        placeholder="Insira a chave PIX"
-                      />
+                      <span className="pix-key-text">{paymentPixKey}</span>
                       <button
                         type="button"
                         className="button small"
@@ -403,10 +398,6 @@ import React, { useState, useEffect } from 'react'
                       >
                         Copiar
                       </button>
-                    </div>
-                    <div className="copy-pix-checkbox">
-                      <input type="checkbox" id="copy-pix" />
-                      <label htmlFor="copy-pix">Clique para copiar a chave PIX</label>
                     </div>
                   </div>
                   <div className="payment-step">
@@ -438,8 +429,373 @@ import React, { useState, useEffect } from 'react'
     }
 
     const AdminPage = () => {
-      // ... (rest of AdminPage component remains the same)
-    }
+      const navigate = useNavigate();
+      const [activeTab, setActiveTab] = useState('prices');
+      const [adultPrice, setAdultPrice] = useState(69.90);
+      const [childPrice0to5, setChildPrice0to5] = useState(0);
+      const [childPrice6to10, setChildPrice6to10] = useState(45);
+      const [locationTitle, setLocationTitle] = useState('Local do Rodízio');
+      const [reservationTitle, setReservationTitle] = useState('Fazer Reserva');
+      const [restaurantAddress, setRestaurantAddress] = useState('');
+      const [popupTitle, setPopupTitle] = useState('Bem-vindo ao nosso restaurante!');
+      const [popupDescription, setPopupDescription] = useState('Faça sua reserva agora mesmo.');
+      const [showPopup, setShowPopup] = useState(true);
+      const [paymentPixKey, setPaymentPixKey] = useState('');
+      const [paymentPixType, setPaymentPixType] = useState('CPF');
+      const [notification, setNotification] = useState(null);
+
+      useEffect(() => {
+        const fetchPrices = async () => {
+          const { data, error } = await supabase
+            .from('prices')
+            .select('*')
+            .single();
+
+          if (error || !data) {
+            return;
+          }
+
+          setAdultPrice(data.adult || 69.90);
+          setChildPrice0to5(data['0-5'] || 0);
+          setChildPrice6to10(data['6-10'] || 45);
+          setLocationTitle(data.locationTitle || 'Local do Rodízio');
+          setReservationTitle(data.reservationTitle || 'Fazer Reserva');
+        };
+
+        const fetchAddress = async () => {
+          try {
+            const { data, error } = await supabase
+              .from('addresses')
+              .select('address')
+              .single();
+
+            if (error) {
+              console.error("Erro ao buscar endereço:", error);
+              setNotification("Erro ao carregar endereço do restaurante.", "error");
+              return;
+            }
+
+            setRestaurantAddress(data?.address || '');
+          } catch (error) {
+            console.error("Erro ao buscar endereço:", error);
+            setNotification("Erro ao carregar endereço do restaurante.", "error");
+          }
+        };
+
+        const fetchPopupSettings = async () => {
+          try {
+            const { data, error } = await supabase
+              .from('popup_settings')
+              .select('*')
+              .single();
+
+            if (error) {
+              console.error("Erro ao buscar configurações do popup:", error);
+              return;
+            }
+
+            setPopupTitle(data?.title || 'Bem-vindo ao nosso restaurante!');
+            setPopupDescription(data?.description || 'Faça sua reserva agora mesmo.');
+            setShowPopup(data?.show === undefined ? true : data.show);
+          } catch (error) {
+            console.error("Erro ao buscar configurações do popup:", error);
+          }
+        };
+
+        const fetchPaymentSettings = async () => {
+          try {
+            const { data, error } = await supabase
+              .from('payment_settings')
+              .select('*')
+              .single();
+
+            if (error) {
+              console.error("Erro ao buscar configurações de pagamento:", error);
+              return;
+            }
+
+            setPaymentPixKey(data?.pix_key || '');
+            setPaymentPixType(data?.pix_type || 'CPF');
+          } catch (error) {
+            console.error("Erro ao buscar configurações de pagamento:", error);
+          }
+        };
+
+        fetchPrices();
+        fetchAddress();
+        fetchPopupSettings();
+        fetchPaymentSettings();
+      }, []);
+
+      const showNotification = (message, type) => {
+        setNotification({ message, type });
+        setTimeout(() => setNotification(null), 3000);
+      };
+
+      const handlePriceSubmit = async (e) => {
+        e.preventDefault();
+        const { error } = await supabase
+          .from('prices')
+          .upsert({
+            id: 1,
+            adult: adultPrice,
+            '0-5': childPrice0to5,
+            '6-10': childPrice6to10,
+            locationTitle: locationTitle,
+            reservationTitle: reservationTitle,
+          });
+
+        if (error) {
+          showNotification('Erro ao atualizar preços', 'error');
+          return;
+        }
+
+        showNotification('Preços atualizados com sucesso!', 'success');
+      };
+
+      const handleAddressSubmit = async (e) => {
+        e.preventDefault();
+        const { error } = await supabase
+          .from('addresses')
+          .upsert({
+            id: 1,
+            address: restaurantAddress,
+          });
+
+        if (error) {
+          showNotification('Erro ao atualizar endereço', 'error');
+          return;
+        }
+
+        showNotification('Endereço atualizado com sucesso!', 'success');
+      };
+
+      const handlePopupSubmit = async (e) => {
+        e.preventDefault();
+        const { error } = await supabase
+          .from('popup_settings')
+          .upsert({
+            id: 1,
+            title: popupTitle,
+            description: popupDescription,
+            show: showPopup,
+          });
+
+        if (error) {
+          showNotification('Erro ao atualizar configurações do popup', 'error');
+          return;
+        }
+
+        showNotification('Configurações do popup atualizadas com sucesso!', 'success');
+      };
+
+      const handlePaymentSubmit = async (e) => {
+        e.preventDefault();
+        const { error } = await supabase
+          .from('payment_settings')
+          .upsert({
+            id: 1,
+            pix_key: paymentPixKey,
+            pix_type: paymentPixType,
+          });
+
+        if (error) {
+          showNotification('Erro ao atualizar configurações de pagamento', 'error');
+          return;
+        }
+
+        showNotification('Configurações de pagamento atualizadas com sucesso!', 'success');
+      };
+
+      return (
+        <div className="admin-container">
+          <div className="admin-sidebar">
+            <h2>Admin Panel</h2>
+            <ul>
+              <li>
+                <a
+                  href="#"
+                  onClick={() => setActiveTab('prices')}
+                  className={activeTab === 'prices' ? 'active' : ''}
+                >
+                  Preços
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  onClick={() => setActiveTab('address')}
+                  className={activeTab === 'address' ? 'active' : ''}
+                >
+                  Endereço
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  onClick={() => setActiveTab('popup')}
+                  className={activeTab === 'popup' ? 'active' : ''}
+                >
+                  Popup
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  onClick={() => setActiveTab('payment')}
+                  className={activeTab === 'payment' ? 'active' : ''}
+                >
+                  Pagamento
+                </a>
+              </li>
+              <li>
+                <Link to="/" >Voltar para Reserva</Link>
+              </li>
+            </ul>
+          </div>
+          <div className="admin-content">
+            {activeTab === 'prices' && (
+              <div className="price-settings">
+                <h2>Configurações de Preços</h2>
+                <form onSubmit={handlePriceSubmit}>
+                  <div className="input-group">
+                    <label>Preço Adulto:</label>
+                    <input
+                      type="number"
+                      value={adultPrice}
+                      onChange={(e) => setAdultPrice(parseFloat(e.target.value))}
+                    />
+                  </div>
+                  <div className="input-group">
+                    <label>Preço Criança (0-5 anos):</label>
+                    <input
+                      type="number"
+                      value={childPrice0to5}
+                      onChange={(e) => setChildPrice0to5(parseFloat(e.target.value))}
+                    />
+                  </div>
+                  <div className="input-group">
+                    <label>Preço Criança (6-10 anos):</label>
+                    <input
+                      type="number"
+                      value={childPrice6to10}
+                      onChange={(e) => setChildPrice6to10(parseFloat(e.target.value))}
+                    />
+                  </div>
+                  <div className="input-group">
+                    <label>Título do Local:</label>
+                    <input
+                      type="text"
+                      value={locationTitle}
+                      onChange={(e) => setLocationTitle(e.target.value)}
+                    />
+                  </div>
+                  <div className="input-group">
+                    <label>Título da Reserva:</label>
+                    <input
+                      type="text"
+                      value={reservationTitle}
+                      onChange={(e) => setReservationTitle(e.target.value)}
+                    />
+                  </div>
+                  <button type="submit" className="button primary">
+                    Salvar Preços
+                  </button>
+                </form>
+              </div>
+            )}
+            {activeTab === 'address' && (
+              <div className="price-settings">
+                <h2>Configurações de Endereço</h2>
+                <form onSubmit={handleAddressSubmit}>
+                  <div className="input-group">
+                    <label>Endereço do Restaurante:</label>
+                    <input
+                      type="text"
+                      value={restaurantAddress}
+                      onChange={(e) => setRestaurantAddress(e.target.value)}
+                    />
+                  </div>
+                  <button type="submit" className="button primary">
+                    Salvar Endereço
+                  </button>
+                </form>
+              </div>
+            )}
+            {activeTab === 'popup' && (
+              <div className="price-settings">
+                <h2>Configurações do Popup</h2>
+                <form onSubmit={handlePopupSubmit}>
+                  <div className="input-group">
+                    <label>Título do Popup:</label>
+                    <input
+                      type="text"
+                      value={popupTitle}
+                      onChange={(e) => setPopupTitle(e.target.value)}
+                    />
+                  </div>
+                  <div className="input-group">
+                    <label>Descrição do Popup:</label>
+                    <input
+                      type="text"
+                      value={popupDescription}
+                      onChange={(e) => setPopupDescription(e.target.value)}
+                    />
+                  </div>
+                  <div className="input-group">
+                    <label>Mostrar Popup:</label>
+                    <input
+                      type="checkbox"
+                      checked={showPopup}
+                      onChange={(e) => setShowPopup(e.target.checked)}
+                    />
+                  </div>
+                  <button type="submit" className="button primary">
+                    Salvar Configurações do Popup
+                  </button>
+                </form>
+              </div>
+            )}
+            {activeTab === 'payment' && (
+              <div className="price-settings">
+                <h2>Configurações de Pagamento</h2>
+                <form onSubmit={handlePaymentSubmit}>
+                  <div className="input-group">
+                    <label>Chave PIX:</label>
+                    <input
+                      type="text"
+                      value={paymentPixKey}
+                      onChange={(e) => setPaymentPixKey(e.target.value)}
+                    />
+                  </div>
+                  <div className="input-group">
+                    <label>Tipo de Chave PIX:</label>
+                    <select
+                      value={paymentPixType}
+                      onChange={(e) => setPaymentPixType(e.target.value)}
+                    >
+                      <option value="CPF">CPF</option>
+                      <option value="CNPJ">CNPJ</option>
+                      <option value="Email">Email</option>
+                      <option value="Telefone">Telefone</option>
+                      <option value="Aleatória">Aleatória</option>
+                    </select>
+                  </div>
+                  <button type="submit" className="button primary">
+                    Salvar Configurações de Pagamento
+                  </button>
+                </form>
+              </div>
+            )}
+          </div>
+          {notification && (
+            <div className={`notification ${notification.type}`}>
+              {notification.message}
+            </div>
+          )}
+        </div>
+      );
+    };
 
     const handleChildCheckboxChange = (index, value) => {
       setParticipants(prevParticipants => {
