@@ -130,8 +130,7 @@
     }
 
     .restaurant-info,
-    .payment-step,
-    .payment-info {
+    .payment-step {
       background: #f8f8f8;
       padding: 1.25rem;
       border-radius: 8px;
@@ -153,6 +152,9 @@
     }
 
     .payment-info {
+      background: #f5f5dc;
+      padding: 1.25rem;
+      border-radius: 8px;
       margin-top: 1rem;
     }
 
