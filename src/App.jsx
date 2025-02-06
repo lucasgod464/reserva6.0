@@ -434,8 +434,6 @@ import React, { useState, useEffect } from 'react'
       const [adultPrice, setAdultPrice] = useState(69.90);
       const [childPrice0to5, setChildPrice0to5] = useState(0);
       const [childPrice6to10, setChildPrice6to10] = useState(45);
-      const [locationTitle, setLocationTitle] = useState('Local do Rodízio');
-      const [reservationTitle, setReservationTitle] = useState('Fazer Reserva');
       const [restaurantAddress, setRestaurantAddress] = useState('');
       const [popupTitle, setPopupTitle] = useState('Bem-vindo ao nosso restaurante!');
       const [popupDescription, setPopupDescription] = useState('Faça sua reserva agora mesmo.');
@@ -458,8 +456,6 @@ import React, { useState, useEffect } from 'react'
           setAdultPrice(data.adult || 69.90);
           setChildPrice0to5(data['0-5'] || 0);
           setChildPrice6to10(data['6-10'] || 45);
-          setLocationTitle(data.locationTitle || 'Local do Rodízio');
-          setReservationTitle(data.reservationTitle || 'Fazer Reserva');
         };
 
         const fetchAddress = async () => {
@@ -534,15 +530,22 @@ import React, { useState, useEffect } from 'react'
 
       const handlePriceSubmit = async (e) => {
         e.preventDefault();
+        const adultPriceValue = parseFloat(adultPrice);
+        const childPrice0to5Value = parseFloat(childPrice0to5);
+        const childPrice6to10Value = parseFloat(childPrice6to10);
+
+        if (isNaN(adultPriceValue) || isNaN(childPrice0to5Value) || isNaN(childPrice6to10Value)) {
+          showNotification('Por favor, insira valores numéricos válidos para os preços.', 'error');
+          return;
+        }
+
         const { error } = await supabase
           .from('prices')
           .upsert({
             id: 1,
-            adult: adultPrice,
-            '0-5': childPrice0to5,
-            '6-10': childPrice6to10,
-            locationTitle: locationTitle,
-            reservationTitle: reservationTitle,
+            adult: adultPriceValue,
+            '0-5': childPrice0to5Value,
+            '6-10': childPrice6to10Value,
           });
 
         if (error) {
@@ -680,22 +683,6 @@ import React, { useState, useEffect } from 'react'
                       type="number"
                       value={childPrice6to10}
                       onChange={(e) => setChildPrice6to10(parseFloat(e.target.value))}
-                    />
-                  </div>
-                  <div className="input-group">
-                    <label>Título do Local:</label>
-                    <input
-                      type="text"
-                      value={locationTitle}
-                      onChange={(e) => setLocationTitle(e.target.value)}
-                    />
-                  </div>
-                  <div className="input-group">
-                    <label>Título da Reserva:</label>
-                    <input
-                      type="text"
-                      value={reservationTitle}
-                      onChange={(e) => setReservationTitle(e.target.value)}
                     />
                   </div>
                   <button type="submit" className="button primary">
